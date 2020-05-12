@@ -700,7 +700,7 @@ func TestDialUseACL(t *testing.T) {
 }
 
 // Connect to an Redis instance using the Redis ACL system
-func ExampleDialUseACL() {
+func ExampleDial_acl() {
 	c, err := redis.Dial("tcp", "localhost:6379",
 		redis.DialUsername("username"),
 		redis.DialPassword("password"),
