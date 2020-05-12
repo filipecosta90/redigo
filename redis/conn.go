@@ -245,7 +245,7 @@ func Dial(network, address string, options ...DialOption) (Conn, error) {
 	}
 
 	if do.password != "" {
-		authArgs := []interface{}{}
+		authArgs := make([]interface{}, 0, 2)
 		// When ACLs are used, if only the password is specified we do auth <password>
 		// given that redis assumes that only when password is specified the implicit username is "default".
 		if do.useACL && do.username != "" {
@@ -308,10 +308,9 @@ func DialURL(rawurl string, options ...DialOption) (Conn, error) {
 	address := net.JoinHostPort(host, port)
 
 	if u.User != nil {
-		options = append(options, DialUsername(u.User.Username()))
 		password, isSet := u.User.Password()
 		if isSet {
-			options = append(options, DialPassword(password))
+			options = append(options, DialUsername(u.User.Username()), DialPassword(password))
 		}
 	}
 
