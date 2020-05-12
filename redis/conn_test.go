@@ -280,7 +280,7 @@ func TestReadString(t *testing.T) {
 	// n is value of bufio.defaultBufSize
 	const n = 4096
 
-	// Test read string lengths near bufio.Reader buffer boundaries.
+	// Test r string lengths near bufio.Reader buffer boundaries.
 	testRanges := [][2]int{{0, 64}, {n - 64, n + 64}, {2*n - 64, 2*n + 64}}
 
 	p := make([]byte, 2*n+64)
@@ -601,44 +601,28 @@ func TestDialURLHost(t *testing.T) {
 var dialURLTests = []struct {
 	description string
 	url         string
-	read        string
-	write       string
-	writeACL    string
+	r           string
+	w           string
 }{
-	{"password", "redis://:abc123@localhost", "+OK\r\n", "*2\r\n$4\r\nAUTH\r\n$6\r\nabc123\r\n", "*2\r\n$4\r\nAUTH\r\n$6\r\nabc123\r\n"},
-	{"username and password", "redis://user:password@localhost", "+OK\r\n", "*2\r\n$4\r\nAUTH\r\n$8\r\npassword\r\n", "*3\r\n$4\r\nAUTH\r\n$4\r\nuser\r\n$8\r\npassword\r\n"},
-	{"username", "redis://x:@localhost", "+OK\r\n", "", ""},
-	{"database 3", "redis://localhost/3", "+OK\r\n", "*2\r\n$6\r\nSELECT\r\n$1\r\n3\r\n", "*2\r\n$6\r\nSELECT\r\n$1\r\n3\r\n"},
-	{"database 99", "redis://localhost/99", "+OK\r\n", "*2\r\n$6\r\nSELECT\r\n$2\r\n99\r\n", "*2\r\n$6\r\nSELECT\r\n$2\r\n99\r\n"},
-	{"no database", "redis://localhost/", "+OK\r\n", "", ""},
+	{"password", "redis://:abc123@localhost", "+OK\r\n", "*2\r\n$4\r\nAUTH\r\n$6\r\nabc123\r\n"},
+	{"username and password", "redis://user:password@localhost", "+OK\r\n", "*3\r\n$4\r\nAUTH\r\n$4\r\nuser\r\n$8\r\npassword\r\n"},
+	{"username", "redis://x:@localhost", "+OK\r\n", ""},
+	{"database 3", "redis://localhost/3", "+OK\r\n", "*2\r\n$6\r\nSELECT\r\n$1\r\n3\r\n"},
+	{"database 99", "redis://localhost/99", "+OK\r\n", "*2\r\n$6\r\nSELECT\r\n$2\r\n99\r\n"},
+	{"no database", "redis://localhost/", "+OK\r\n", ""},
 }
 
 func TestDialURL(t *testing.T) {
 	for _, tt := range dialURLTests {
 		var buf bytes.Buffer
 		// UseTLS should be ignored in all of these tests.
-		_, err := redis.DialURL(tt.url, dialTestConn(tt.read, &buf), redis.DialUseTLS(true))
+		_, err := redis.DialURL(tt.url, dialTestConn(tt.r, &buf), redis.DialUseTLS(true))
 		if err != nil {
 			t.Errorf("%s dial error: %v", tt.description, err)
 			continue
 		}
-		if w := buf.String(); w != tt.write {
-			t.Errorf("%s commands = %q, want %q", tt.description, w, tt.write)
-		}
-	}
-}
-
-func TestDialACL(t *testing.T) {
-	for _, tt := range dialURLTests {
-		var buf bytes.Buffer
-		// UseTLS should be ignored in all of these tests.
-		_, err := redis.DialURL(tt.url, dialTestConn(tt.read, &buf), redis.DialUseACL(true))
-		if err != nil {
-			t.Errorf("%s dial error: %v", tt.description, err)
-			continue
-		}
-		if w := buf.String(); w != tt.writeACL {
-			t.Errorf("%s commands = %q, want %q", tt.description, w, tt.writeACL)
+		if w := buf.String(); w != tt.w {
+			t.Errorf("%s commands = %q, want %q", tt.description, w, tt.w)
 		}
 	}
 }
@@ -702,7 +686,6 @@ func TestDialUseACL(t *testing.T) {
 	_, err := redis.Dial("tcp", "localhost:6379",
 		redis.DialUsername("user"),
 		redis.DialPassword("password"),
-		redis.DialUseACL(true),
 		dialTestConn(pingResponse, &buf))
 	if err != nil {
 		t.Fatal("dial error:", err)
@@ -721,7 +704,6 @@ func ExampleDialUseACL() {
 	c, err := redis.Dial("tcp", "localhost:6379",
 		redis.DialUsername("username"),
 		redis.DialPassword("password"),
-		redis.DialUseACL(true),
 	)
 	if err != nil {
 		// handle error

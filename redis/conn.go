@@ -79,7 +79,6 @@ type dialOptions struct {
 	dialer       *net.Dialer
 	dial         func(network, addr string) (net.Conn, error)
 	db           int
-	useACL       bool
 	username     string
 	password     string
 	clientName   string
@@ -149,14 +148,6 @@ func DialPassword(password string) DialOption {
 func DialUsername(username string) DialOption {
 	return DialOption{func(do *dialOptions) {
 		do.username = username
-	}}
-}
-
-// DialUseACL specifies whether Redis ACL system should be used when connecting to the
-// server.
-func DialUseACL(useACL bool) DialOption {
-	return DialOption{func(do *dialOptions) {
-		do.useACL = useACL
 	}}
 }
 
@@ -246,9 +237,7 @@ func Dial(network, address string, options ...DialOption) (Conn, error) {
 
 	if do.password != "" {
 		authArgs := make([]interface{}, 0, 2)
-		// When ACLs are used, if only the password is specified we do auth <password>
-		// given that redis assumes that only when password is specified the implicit username is "default".
-		if do.useACL && do.username != "" {
+		if do.username != "" {
 			authArgs = append(authArgs, do.username)
 		}
 		authArgs = append(authArgs, do.password)
@@ -469,12 +458,12 @@ func (c *conn) writeArg(arg interface{}, argumentTypeOK bool) (err error) {
 type protocolError string
 
 func (pe protocolError) Error() string {
-	return fmt.Sprintf("redigo: %s (possible server error or unsupported concurrent read by application)", string(pe))
+	return fmt.Sprintf("redigo: %s (possible server error or unsupported concurrent r by application)", string(pe))
 }
 
 // readLine reads a line of input from the RESP stream.
 func (c *conn) readLine() ([]byte, error) {
-	// To avoid allocations, attempt to read the line using ReadSlice. This
+	// To avoid allocations, attempt to r the line using ReadSlice. This
 	// call typically succeeds. The known case where the call fails is when
 	// reading the output from the MONITOR command.
 	p, err := c.br.ReadSlice('\n')
@@ -655,7 +644,7 @@ func (c *conn) ReceiveWithTimeout(timeout time.Duration) (reply interface{}, err
 	// unsubscribing from all channels, we do not decrement pending to a
 	// negative value.
 	//
-	// The pending field is decremented after the reply is read to handle the
+	// The pending field is decremented after the reply is r to handle the
 	// case where Receive is called before Send.
 	c.mu.Lock()
 	if c.pending > 0 {
