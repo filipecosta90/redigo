@@ -79,6 +79,8 @@ type dialOptions struct {
 	dialer       *net.Dialer
 	dial         func(network, addr string) (net.Conn, error)
 	db           int
+	useACL       bool
+	username     string
 	password     string
 	clientName   string
 	useTLS       bool
@@ -139,6 +141,23 @@ func DialDatabase(db int) DialOption {
 func DialPassword(password string) DialOption {
 	return DialOption{func(do *dialOptions) {
 		do.password = password
+	}}
+}
+
+
+// DialUsername specifies the username to use when connecting to
+// the Redis server when Redis ACLs are used.
+func DialUsername(username string) DialOption {
+	return DialOption{func(do *dialOptions) {
+		do.username = username
+	}}
+}
+
+// DialUseACL specifies whether Redis ACL system should be used when connecting to the
+// server.
+func DialUseACL(useACL bool) DialOption {
+	return DialOption{func(do *dialOptions) {
+		do.useACL = useACL
 	}}
 }
 
@@ -227,7 +246,14 @@ func Dial(network, address string, options ...DialOption) (Conn, error) {
 	}
 
 	if do.password != "" {
-		if _, err := c.Do("AUTH", do.password); err != nil {
+		authArgs := []interface{}{}
+		// When ACLs are used, if only the password is specified we do auth <password>
+		// given that redis assumes that only when password is specified the implicit username is "default".
+		if do.useACL && do.username != "" {
+			authArgs = append(authArgs, do.username)
+		}
+		authArgs = append(authArgs, do.password)
+		if _, err := c.Do("AUTH", authArgs...); err != nil {
 			netConn.Close()
 			return nil, err
 		}
@@ -283,6 +309,7 @@ func DialURL(rawurl string, options ...DialOption) (Conn, error) {
 	address := net.JoinHostPort(host, port)
 
 	if u.User != nil {
+		options = append(options, DialUsername(u.User.Username()))
 		password, isSet := u.User.Password()
 		if isSet {
 			options = append(options, DialPassword(password))
