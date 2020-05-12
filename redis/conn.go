@@ -144,7 +144,6 @@ func DialPassword(password string) DialOption {
 	}}
 }
 
-
 // DialUsername specifies the username to use when connecting to
 // the Redis server when Redis ACLs are used.
 func DialUsername(username string) DialOption {

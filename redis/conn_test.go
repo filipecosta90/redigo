@@ -38,10 +38,14 @@ type testConn struct {
 	writeDeadline time.Time
 }
 
-func (*testConn) Close() error                         { return nil }
-func (*testConn) LocalAddr() net.Addr                  { return nil }
-func (*testConn) RemoteAddr() net.Addr                 { return nil }
-func (c *testConn) SetDeadline(t time.Time) error      { c.readDeadline = t; c.writeDeadline = t; return nil }
+func (*testConn) Close() error         { return nil }
+func (*testConn) LocalAddr() net.Addr  { return nil }
+func (*testConn) RemoteAddr() net.Addr { return nil }
+func (c *testConn) SetDeadline(t time.Time) error {
+	c.readDeadline = t
+	c.writeDeadline = t
+	return nil
+}
 func (c *testConn) SetReadDeadline(t time.Time) error  { c.readDeadline = t; return nil }
 func (c *testConn) SetWriteDeadline(t time.Time) error { c.writeDeadline = t; return nil }
 
@@ -599,7 +603,7 @@ var dialURLTests = []struct {
 	url         string
 	read        string
 	write       string
-	writeACL	string
+	writeACL    string
 }{
 	{"password", "redis://:abc123@localhost", "+OK\r\n", "*2\r\n$4\r\nAUTH\r\n$6\r\nabc123\r\n", "*2\r\n$4\r\nAUTH\r\n$6\r\nabc123\r\n"},
 	{"username and password", "redis://user:password@localhost", "+OK\r\n", "*2\r\n$4\r\nAUTH\r\n$8\r\npassword\r\n", "*3\r\n$4\r\nAUTH\r\n$4\r\nuser\r\n$8\r\npassword\r\n"},
