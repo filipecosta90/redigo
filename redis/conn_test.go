@@ -280,7 +280,7 @@ func TestReadString(t *testing.T) {
 	// n is value of bufio.defaultBufSize
 	const n = 4096
 
-	// Test r string lengths near bufio.Reader buffer boundaries.
+	// Test read string lengths near bufio.Reader buffer boundaries.
 	testRanges := [][2]int{{0, 64}, {n - 64, n + 64}, {2*n - 64, 2*n + 64}}
 
 	p := make([]byte, 2*n+64)
